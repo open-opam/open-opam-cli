@@ -1,0 +1,37 @@
+# A tag makes one immutable release: its source archive, which is what the
+# registry publishes, and the binary the registry's CI runs. Assets lock when a
+# release is published, so both are attached while it is a draft.
+name: release
+
+on:
+  push:
+    tags: ["*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: "5.5"
+      - run: opam repo add open-opam https://github.com/open-opam/opam-repository.git --rank=-1
+      # Until the registry holds wiretype, which this needs to build, Hypha's
+      # opam repository gives it, last, after the registry.
+      - run: opam repo add hypha https://github.com/hyphatech/opam-repository.git --rank=-1
+      - run: opam install . --deps-only -y
+      - run: opam exec -- dune build --profile release bin/main.exe
+      - name: Create the release, attach its files and publish it
+        run: |
+          archive="open-opam-cli-$TAG.tar.gz"
+          git archive --format=tar --prefix="open-opam-cli-$TAG/" "$TAG" | gzip -n -9 > "$archive"
+          cp _build/default/bin/main.exe open-opam-linux-x86_64
+          gh release create "$TAG" --draft --title "$TAG" --notes "" --verify-tag
+          gh release upload "$TAG" "$archive" open-opam-linux-x86_64
+          gh release edit "$TAG" --draft=false

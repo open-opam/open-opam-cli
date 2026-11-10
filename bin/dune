@@ -1,0 +1,17 @@
+(executable
+ (name main)
+ (public_name open-opam)
+ (package open-opam)
+ (libraries
+  cmdliner
+  dune-build-info
+  eio
+  eio_main
+  fmt
+  mtime
+  open_opam
+  progress
+  ptime
+  ptime.clock.os
+  unix
+  wiretype))

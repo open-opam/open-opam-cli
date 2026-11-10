@@ -1,0 +1,6 @@
+(library
+ (name open_opam)
+ (public_name open-opam)
+ (libraries digestif eio mtime opam-file-format ptime wiretype)
+ (preprocess
+  (pps ppx_wiretype)))

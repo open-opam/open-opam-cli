@@ -1,0 +1,16 @@
+(tests
+ (names test_open_opam test_release test_properties)
+ (package open-opam)
+ (libraries
+  alcotest
+  eio
+  eio_main
+  open_opam
+  ptime
+  qcheck-alcotest
+  qcheck-core
+  wiretype))
+
+(cram
+ (package open-opam)
+ (deps %{bin:open-opam} fake_gh.sh))

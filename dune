@@ -1,0 +1,11 @@
+; Every warning but 4 (fragile match, which fires on every `_ ->`, and a
+; dependency's variant ends in a catch-all) and the module-style ones: 40, 41,
+; 42 (names resolved by type), 44, 45 (an open shadowing), 48 (eliminated
+; optional arguments), 67 (a functor parameter its signature leaves unused) and
+; 70 (a missing interface, which review holds). Warning 9 makes a new record
+; field a compile error wherever a pattern should handle it.
+
+(env
+ (_
+  (flags
+   (:standard -w +a-4-40-41-42-44-45-48-67-70))))

@@ -1,0 +1,46 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: "5.5"
+      - run: opam repo add open-opam https://github.com/open-opam/opam-repository.git --rank=-1
+      # Until the registry holds wiretype, which this needs to build, Hypha's
+      # opam repository gives it, last, after the registry.
+      - run: opam repo add hypha https://github.com/hyphatech/opam-repository.git --rank=-1
+      - run: opam install . --deps-only --with-test --with-dev-setup -y
+      - run: make lint test OPAM="opam exec --"
+
+  # opam installs any version the ranges in dune-project allow, so the oldest
+  # are built and tested too: a lower bound that no longer holds is found here,
+  # not by a user whose switch already has that version.
+  oldest:
+    runs-on: ubuntu-24.04
+    env:
+      OPAMCRITERIA: +removed,+count[version-lag,solution]
+      OPAMFIXUPCRITERIA: +removed,+count[version-lag,solution]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: "5.5"
+      - run: opam repo add open-opam https://github.com/open-opam/opam-repository.git --rank=-1
+      # Until the registry holds wiretype, which this needs to build, Hypha's
+      # opam repository gives it, last, after the registry.
+      - run: opam repo add hypha https://github.com/hyphatech/opam-repository.git --rank=-1
+      - run: opam install . --deps-only --with-test -y
+      - run: opam list --installed --columns=name,version
+      - run: opam exec -- dune build @all
+      - run: opam exec -- dune test --force
