@@ -37,6 +37,9 @@ let print t pp =
 let tick : unit Fmt.t = Fmt.styled `Green (Fmt.any "\u{2713}")
 let cross : unit Fmt.t = Fmt.styled `Red (Fmt.any "\u{2717}")
 
+let completed : unit Fmt.t =
+  Fmt.(any "\u{1F389} " ++ styled `Bold (any "Done!"))
+
 let finish t =
   t.running <- None;
   t.step ""
@@ -82,9 +85,7 @@ let passed t text = print t (fun ppf -> Fmt.pf ppf "%a %s" tick () text)
 let refused t text = print t (fun ppf -> Fmt.pf ppf "%a %s" cross () text)
 
 (* The end of a run that left the author nothing to do. *)
-let finished t text =
-  print t (fun ppf ->
-      Fmt.pf ppf "\u{1F389} %a %s" Fmt.(styled `Bold string) "Done!" text)
+let finished t text = print t (fun ppf -> Fmt.pf ppf "%a %s" completed () text)
 
 let detail t text =
   print t (fun ppf ->
