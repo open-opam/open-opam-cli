@@ -110,10 +110,17 @@ case "$*" in
     [ -f "$FAKE/release_refused" ] && { echo "HTTP 422: Validation Failed" >&2; exit 1; }
     printf '{"tag_name":"%s","draft":true,"immutable":false,"published_at":null,"body":"","assets":[]}' "$3" > "$FAKE/release.json" ;;
   "release upload "*)
-    cp "$4" "$FAKE/asset.tar.gz"
-    sha=$(openssl dgst -sha256 -r "$4" | cut -d' ' -f1)
-    printf '{"tag_name":"%s","draft":true,"immutable":false,"published_at":null,"body":"","assets":[{"name":"%s","digest":"sha256:%s","browser_download_url":"x"}]}' \
-      "$3" "$(basename "$4")" "$sha" > "$FAKE/release.json" ;;
+    # The archive first, then any file the author attaches, up to --clobber.
+    tag=$3; shift 3
+    cp "$1" "$FAKE/asset.tar.gz"
+    assets=""
+    for file in "$@"; do
+      [ "$file" = "--clobber" ] && break
+      sha=$(openssl dgst -sha256 -r "$file" | cut -d' ' -f1)
+      assets="$assets${assets:+,}$(printf '{"name":"%s","digest":"sha256:%s","browser_download_url":"x"}' "$(basename "$file")" "$sha")"
+    done
+    printf '{"tag_name":"%s","draft":true,"immutable":false,"published_at":null,"body":"","assets":[%s]}' \
+      "$tag" "$assets" > "$FAKE/release.json" ;;
   "release edit "*" --draft=false")
     # GitHub publishes the draft, immutable, and attests the tag and its asset.
     sed 's/"draft":true,"immutable":false,"published_at":null/"draft":false,"immutable":true,"published_at":"2026-11-09T12:00:00Z"/' "$FAKE/release.json" > "$FAKE/published.json"

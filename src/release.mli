@@ -11,6 +11,9 @@ val valid_repository : string -> bool
 (** Whether [owner/name] can name a GitHub repository. It reaches the same
     arguments and paths, so it is held to GitHub's characters first. *)
 
+val is_archive : version:string -> string -> bool
+(** Whether a file of this name would be taken for the release's archive. *)
+
 val archives : version:string -> Github.asset list -> Github.asset list
 (** The assets named [<name>-<version>.tar.gz] or [<name>-<version>.tbz]. A
     release is published from exactly one. *)

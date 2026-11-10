@@ -59,9 +59,10 @@ let tag_commit mgr ~repository ~tag ~commit =
   in
   Ok ()
 
-(* An immutable release takes no asset once it is published, so the archive is
-   given to a draft, and the draft is then published. *)
-let publish_with mgr ~repository ~tag ~archive ~draft =
+(* An immutable release takes no asset once it is published, so the archive,
+   and any file the author attaches, is given to a draft, and the draft is then
+   published. *)
+let publish_with mgr ~repository ~tag ~archive ~attached ~draft =
   let* () =
     if draft then Ok ()
     else
@@ -85,14 +86,15 @@ let publish_with mgr ~repository ~tag ~archive ~draft =
   in
   let* (_ : string) =
     Tools.gh mgr
-      [ "release"; "upload"; tag; archive; "--clobber"; "-R"; repository ]
+      (("release" :: "upload" :: tag :: archive :: attached)
+      @ [ "--clobber"; "-R"; repository ])
   in
   let* (_ : string) =
     Tools.gh mgr [ "release"; "edit"; tag; "-R"; repository; "--draft=false" ]
   in
   Ok ()
 
-let make mgr ~observe ~repository ~tag ~commit ~archive =
+let make mgr ~observe ~repository ~tag ~commit ~archive ~attached =
   let page = Revocation.release_url ~repository ~tag in
   let* release = look_up mgr ~repository ~tag in
   let made ~draft =
@@ -102,7 +104,7 @@ let make mgr ~observe ~repository ~tag ~commit ~archive =
     in
     let* () =
       step observe (Release { tag; repository }) @@ fun () ->
-      publish_with mgr ~repository ~tag ~archive ~draft
+      publish_with mgr ~repository ~tag ~archive ~attached ~draft
     in
     Ok (Released page)
   in

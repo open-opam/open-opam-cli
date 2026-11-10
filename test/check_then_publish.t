@@ -177,12 +177,22 @@ A push refused, as by a protected branch, stops before anything is tagged:
   $ git tag
   $ git remote set-url --push origin "file://$FAKE/foo"
 
-release pushes the commit, since CI runs on GitHub, and waits while its checks
-run:
+A file attached under the archive's name is refused before anything is tagged,
+since a release has one archive:
+
+  $ echo other > "$FAKE/foo-1.0.0.tar.gz"
+  $ open-opam release 1.0.0 --attach "$FAKE/foo-1.0.0.tar.gz" 2>&1
+  foo-1.0.0.tar.gz would be a second archive of 1.0.0, and a release has one: attach it under another name.
+  [2]
+  $ git tag
+
+release pushes the commit, since CI runs on GitHub, waits while its checks
+run, and gives the draft any file attached, such as a binary, with its archive:
 
   $ echo '[{"check_runs":[{"name":"test","status":"in_progress","conclusion":null}]}]' > "$FAKE/checks.json"
   $ echo '[{"check_runs":[{"name":"test","status":"completed","conclusion":"success"}]}]' > "$FAKE/checks_next.json"
-  $ open-opam release 1.0.0
+  $ echo plugin > "$FAKE/plugin-1.0.0.tgz"
+  $ open-opam release 1.0.0 --attach "$FAKE/plugin-1.0.0.tgz"
   ✓ Archive foo-1.0.0.tar.gz of this commit
   ✓ Push this commit to origin
   ✓ Release proof
@@ -198,6 +208,9 @@ run:
   refs/tags/1.0.0
   $ tar -tzf "$FAKE/asset.tar.gz" | head -1
   foo-1.0.0/
+  $ grep -o '"name":"[^"]*"' "$FAKE/release.json"
+  "name":"foo-1.0.0.tar.gz"
+  "name":"plugin-1.0.0.tgz"
 
 Releasing again changes nothing, since the release is made:
 

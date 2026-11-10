@@ -275,7 +275,7 @@ let check_cmd =
 
 (* The commit is held to every gate that can run before it is tagged, and only
    then tagged and released, from the very archive the gates read. *)
-let release format repository tag registry =
+let release format repository tag registry attached =
   Eio_main.run @@ fun env ->
   Display.run ~clock:(Eio.Stdenv.mono_clock env) ~format @@ fun display ->
   let observe = Display.observe display in
@@ -288,11 +288,24 @@ let release format repository tag registry =
       | Some repository -> Ok repository
       | None -> origin_repository mgr ~cwd
     in
-    match refused_names ~repository ~tag with
-    | Some refused ->
+    let version = O.Release.version_of_tag tag in
+    match
+      ( refused_names ~repository ~tag,
+        List.find_opt
+          (fun file -> O.Release.is_archive ~version (Filename.basename file))
+          attached )
+    with
+    | Some refused, _ ->
         observe (O.Step.Judged refused);
         Ok (O.Report.of_outcomes [ refused ], None)
-    | None ->
+    | None, Some file ->
+        Error
+          (`Tool
+             (Printf.sprintf
+                "%s would be a second archive of %s, and a release has one: \
+                 attach it under another name."
+                (Filename.basename file) version))
+    | None, None ->
         O.Tools.with_temporary_directory mgr ~fs @@ fun work ->
         let* commit, archive =
           commit_and_archive mgr ~observe ~work ~repository ~tag
@@ -308,8 +321,7 @@ let release format repository tag registry =
         in
         observe (Finished push);
         let* outcomes =
-          O.Gates.before_release mgr ~observe ~registry ~repository
-            ~version:(O.Release.version_of_tag tag)
+          O.Gates.before_release mgr ~observe ~registry ~repository ~version
             ~commit ~archive
             ~ci_wait:
               (Wait_while_running
@@ -320,6 +332,7 @@ let release format repository tag registry =
         else
           let* made =
             O.Releasing.make mgr ~observe ~repository ~tag ~commit ~archive
+              ~attached
           in
           Ok (report, Some made)
   in
@@ -344,6 +357,15 @@ let release format repository tag registry =
       code
 
 let release_cmd =
+  let attach =
+    Arg.(
+      value & opt_all file []
+      & info [ "attach" ] ~docv:"FILE"
+          ~doc:
+            "Give the release this file too, such as a binary, with its \
+             archive. A published release takes no file, so it is attached \
+             before. Repeat it for each file.")
+  in
   let tag =
     Arg.(
       required
@@ -356,7 +378,8 @@ let release_cmd =
          "Check this commit against every gate that can run before it is \
           tagged, then tag it and make its release: immutable, with the one \
           archive the gates checked.")
-    Term.(const release $ format_arg $ repository_arg $ tag $ registry_arg)
+    Term.(
+      const release $ format_arg $ repository_arg $ tag $ registry_arg $ attach)
 
 (* Publishing starts from a release, made by release or by the author's own
    process, and only ever reads it. *)

@@ -14,9 +14,11 @@ val make :
   tag:string ->
   commit:string ->
   archive:string ->
+  attached:string list ->
   (outcome, [> Tools.error ]) result
 (** [commit] is tagged [tag] where the author works, unless the tag already
     names it, and the tag is pushed to [repository], [owner/name]. A tag that
     names another commit is an error, never moved. A draft an earlier run left
     is given the archive again and published; a published release is left as it
-    is. *)
+    is. [attached] are files given to the draft with the archive, such as a
+    binary, since a published release takes none. *)
