@@ -128,7 +128,20 @@ let commit_and_archive mgr ~observe ~work ~repository ~tag =
     let archive = Filename.concat work (top ^ ".tar.gz") in
     let step = O.Step.Archive (Filename.basename archive) in
     observe (O.Step.Started step);
-    let* (_ : string) =
+    (* A file git archive fills in, such as a version written by export-subst
+       from git describe, must say what the tagged archive will say, so the
+       commit carries the tag while it is archived. The tag stays local, and
+       goes again unless it was already there: release makes it for good only
+       once every gate has passed. *)
+    let* listed = O.Tools.run_git mgr [ "tag"; "--list"; tag ] in
+    let tagged_here = String.equal (String.trim listed) "" in
+    let* () =
+      if tagged_here then
+        let* (_ : string) = O.Tools.run_git mgr [ "tag"; tag; commit ] in
+        Ok ()
+      else Ok ()
+    in
+    let archived =
       O.Tools.run_git mgr
         [
           "archive";
@@ -139,6 +152,13 @@ let commit_and_archive mgr ~observe ~work ~repository ~tag =
           "HEAD";
         ]
     in
+    let* () =
+      if tagged_here then
+        let* (_ : string) = O.Tools.run_git mgr [ "tag"; "--delete"; tag ] in
+        Ok ()
+      else Ok ()
+    in
+    let* (_ : string) = archived in
     observe (Finished step);
     Ok (commit, archive)
 

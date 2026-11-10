@@ -27,6 +27,8 @@ An author's repository, with nothing set up yet:
   $ touch dune-project src/foo.mli
   $ echo '# foo' > README.md
   $ echo '(test (name t))' > test/dune
+  $ echo 'version $Format:%(describe:tags=true)$' > version.txt
+  $ echo 'version.txt export-subst' > .gitattributes
   $ git add . && git commit -qm start && git push -q origin main
 
 Declining init changes nothing:
@@ -208,6 +210,12 @@ run, and gives the draft any file attached, such as a binary, with its archive:
   refs/tags/1.0.0
   $ tar -tzf "$FAKE/asset.tar.gz" | head -1
   foo-1.0.0/
+
+A file git archive fills in from git describe says the version the release is,
+since the commit carries its tag while it is archived:
+
+  $ tar -xzOf "$FAKE/asset.tar.gz" foo-1.0.0/version.txt
+  version 1.0.0
   $ grep -o '"name":"[^"]*"' "$FAKE/release.json"
   "name":"foo-1.0.0.tar.gz"
   "name":"plugin-1.0.0.tgz"
