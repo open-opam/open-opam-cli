@@ -427,8 +427,12 @@ let publish format repository version registry dry_run =
           O.Publish.open_pull_request mgr ~fs ~observe ~registry ~repository
             ~tag:version ~found
         in
-        Ok (report, Some outcome)
+        Ok (report, Some (repository, outcome))
     | Some _ | None -> Ok (report, None)
+  in
+  let named ~repository = Filename.basename repository ^ " " ^ version in
+  let on_its_way ~repository =
+    named ~repository ^ " merges once its checks pass"
   in
   match run with
   | Error e -> stopped display e
@@ -436,20 +440,19 @@ let publish format repository version registry dry_run =
       let code = write_report format report in
       match outcome with
       | None -> code
-      | Some (Proposed (Opened url)) ->
+      | Some (repository, Proposed (Opened url)) ->
           Display.detail display url;
-          Display.next display "The registry merges it once its checks pass";
+          Display.finished display (on_its_way ~repository);
           code
-      | Some (Proposed (Already_open url)) ->
+      | Some (repository, Proposed (Already_open url)) ->
           Display.passed display "Its pull request is already open";
           Display.detail display url;
-          Display.next display "The registry merges it once its checks pass";
+          Display.finished display (on_its_way ~repository);
           code
-      | Some Already_published ->
-          Display.passed display
-            "This version is already published, with these bytes";
+      | Some (repository, Already_published) ->
+          Display.finished display (named ~repository ^ " is already published");
           code
-      | Some (Published_differently path) ->
+      | Some (_, Published_differently path) ->
           Display.refused display ("Publish " ^ version);
           Display.detail display
             (path

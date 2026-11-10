@@ -3,6 +3,9 @@ type t =
   | Archive of string
   | Tag of { tag : string; repository : string }
   | Release of { tag : string; repository : string }
+  | Release_files of { tag : string; repository : string }
+  | Mark of { tag : string; repository : string }
+  | Unmark of { tag : string; repository : string }
   | Registry of string
   | Fork of string
   | Branch of { fork : string; branch : string }
@@ -21,6 +24,13 @@ let to_string = function
   | Tag { tag; repository } -> Printf.sprintf "Tag %s on %s" tag repository
   | Release { tag; repository } ->
       Printf.sprintf "Release %s of %s, with its archive" tag repository
+  | Release_files { tag; repository } ->
+      Printf.sprintf "Release %s of %s and its opam files" tag repository
+  | Mark { tag; repository } ->
+      Printf.sprintf "Notes of %s on %s say %S" tag repository Revocation.mark
+  | Unmark { tag; repository } ->
+      Printf.sprintf "Notes of %s on %s no longer say %S" tag repository
+        Revocation.mark
   | Registry registry -> Printf.sprintf "Registry %s" registry
   | Fork registry -> Printf.sprintf "Your fork of %s" registry
   | Branch { fork; branch } -> Printf.sprintf "Branch %s on %s" branch fork

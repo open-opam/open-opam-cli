@@ -80,7 +80,7 @@ what the fork and the registry share, and carries the release's files alone:
   $ git -C "$FAKE/registry" add . && git -C "$FAKE/registry" commit -qm 'a workflow'
   $ open-opam publish --repo o/foo 1.0.0 | tail -2
     https://github.com/open-opam/opam-repository/pull/1
-  → The registry merges it once its checks pass
+  🎉 Done! foo 1.0.0 merges once its checks pass
   $ test "$(git -C "$FAKE/fork.git" rev-parse publish/foo-1.0.0^)" = "$SHARED" && echo 'on the shared commit'
   on the shared commit
   $ grep -c -- '--title Publish foo 1.0.0' "$FAKE/pr"
@@ -111,7 +111,7 @@ Publishing again while its pull request is open finds it, and pushes nothing:
   $ open-opam publish --repo o/foo 1.0.0 | tail -3
   ✓ Its pull request is already open
     https://github.com/open-opam/opam-repository/pull/1
-  → The registry merges it once its checks pass
+  🎉 Done! foo 1.0.0 merges once its checks pass
   $ test "$(git -C "$FAKE/fork.git" rev-parse publish/foo-1.0.0)" = "$BRANCH" && echo 'branch untouched'
   branch untouched
 
@@ -120,7 +120,7 @@ A branch left on the fork with no pull request open, as after one is closed, is 
   $ rm "$FAKE/open_pr" "$FAKE/pr"
   $ open-opam publish --repo o/foo 1.0.0 | tail -2
     https://github.com/open-opam/opam-repository/pull/1
-  → The registry merges it once its checks pass
+  🎉 Done! foo 1.0.0 merges once its checks pass
   $ test -f "$FAKE/pr" && echo 'opened again'
   opened again
 
@@ -198,7 +198,7 @@ Publishing again finds nothing to do, since the registry already holds these byt
   $ git -C "$FAKE/registry" fetch -q "$FAKE/fork.git" publish/foo-1.0.0:publish
   $ git -C "$FAKE/registry" merge -q --squash publish > /dev/null 2>&1 && git -C "$FAKE/registry" commit -qm 'Publish foo 1.0.0'
   $ open-opam publish --repo o/foo 1.0.0 | tail -1
-  ✓ This version is already published, with these bytes
+  🎉 Done! foo 1.0.0 is already published
 
 and a version the registry holds with other bytes is never changed:
 

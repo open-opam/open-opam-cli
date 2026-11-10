@@ -148,51 +148,57 @@ let propose mgr ~fs ~observe ~registry ~clone ~branch ~title ~body ~files =
     | [ url; owner; fork ] -> Ok (url, owner, fork)
     | _ -> Error (`Tool "GitHub did not say where the fork is.")
   in
-  let* open_ =
-    Tools.gh mgr
-      [
-        "api";
-        Printf.sprintf "repos/%s/pulls?head=%s:%s&state=open" registry owner
-          branch;
-      ]
-  in
-  let* open_ =
-    Github.decode
-      (Wiretype.list Github.pull_request_json)
-      ~what:"the open pull requests" open_
-  in
-  match open_ with
-  | (pull_request : Github.pull_request) :: _ ->
-      Ok (Already_open pull_request.html_url)
-  | [] ->
-      (* A fork behind the registry lacks its newer commits, and GitHub refuses
+  (* The branch is the step from here: a pull request already open means the
+     branch is on the fork, and otherwise everything below goes to make it. *)
+  let* branch_made =
+    step observe (Branch { fork; branch }) @@ fun () ->
+    let* open_ =
+      Tools.gh mgr
+        [
+          "api";
+          Printf.sprintf "repos/%s/pulls?head=%s:%s&state=open" registry owner
+            branch;
+        ]
+    in
+    let* open_ =
+      Github.decode
+        (Wiretype.list Github.pull_request_json)
+        ~what:"the open pull requests" open_
+    in
+    match open_ with
+    | (pull_request : Github.pull_request) :: _ ->
+        Ok (`Open pull_request.html_url)
+    | [] ->
+        (* A fork behind the registry lacks its newer commits, and GitHub refuses
          a push that brings a workflow change without the token's workflow
          scope, which an author should never need. So the branch starts from
          the newest commit both hold and only adds files, which is the pull
          request's diff either way. *)
-      let* shared =
-        match
-          Tools.git mgr ~registry:dir [ "fetch"; "--quiet"; url; "main" ]
-        with
-        | Ok _ ->
-            Tools.git mgr ~registry:dir [ "merge-base"; "HEAD"; "FETCH_HEAD" ]
-        | Error _ -> Ok "HEAD"
-      in
-      let* _ =
-        Tools.git mgr ~registry:dir
-          [ "checkout"; "--quiet"; "--detach"; String.trim shared ]
-      in
-      let* () = write_all ~dir files in
-      let* _ =
-        Tools.git mgr ~registry:dir ("add" :: "--" :: List.map fst files)
-      in
-      let* _ =
-        Tools.git mgr ~registry:dir [ "commit"; "--quiet"; "-m"; title ]
-      in
-      let* _ =
-        step observe (Branch { fork; branch }) @@ fun () ->
-        Tools.git mgr ~registry:dir (push_args url branch)
-      in
+        let* shared =
+          match
+            Tools.git mgr ~registry:dir [ "fetch"; "--quiet"; url; "main" ]
+          with
+          | Ok _ ->
+              Tools.git mgr ~registry:dir [ "merge-base"; "HEAD"; "FETCH_HEAD" ]
+          | Error _ -> Ok "HEAD"
+        in
+        let* _ =
+          Tools.git mgr ~registry:dir
+            [ "checkout"; "--quiet"; "--detach"; String.trim shared ]
+        in
+        let* () = write_all ~dir files in
+        let* _ =
+          Tools.git mgr ~registry:dir ("add" :: "--" :: List.map fst files)
+        in
+        let* _ =
+          Tools.git mgr ~registry:dir [ "commit"; "--quiet"; "-m"; title ]
+        in
+        let* _ = Tools.git mgr ~registry:dir (push_args url branch) in
+        Ok `Pushed
+  in
+  match branch_made with
+  | `Open url -> Ok (Already_open url)
+  | `Pushed ->
       let* opened =
         step observe (Pull_request registry) @@ fun () ->
         Tools.gh mgr
@@ -263,6 +269,9 @@ let encode description what value =
 
 let revoke mgr ~fs ~observe ~registry ~repository ~tag ~undo ~now =
   let release_name = Printf.sprintf "%s %s" repository tag in
+  (* With no release the step is never finished: the refusal that follows
+     says why. *)
+  observe (Step.Started (Release_files { tag; repository }));
   let* release =
     Tools.gh_if_found mgr
       [ "api"; Printf.sprintf "repos/%s/releases/tags/%s" repository tag ]
@@ -282,6 +291,7 @@ let revoke mgr ~fs ~observe ~registry ~repository ~tag ~undo ~now =
           (Wiretype.list Github.directory_entry_json)
           ~what:"the release's files" listing
       in
+      observe (Step.Finished (Release_files { tag; repository }));
       let names =
         List.filter_map
           (fun (e : Github.directory_entry) ->
@@ -385,6 +395,10 @@ let revoke mgr ~fs ~observe ~registry ~repository ~tag ~undo ~now =
           in
           let current = String.trim (Option.value release.body ~default:"") in
           let* () =
+            step observe
+              (if undo then Unmark { tag; repository }
+               else Mark { tag; repository })
+            @@ fun () ->
             if String.equal current wanted then Ok ()
             else
               let* _ =

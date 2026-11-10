@@ -96,12 +96,19 @@ let publish_with mgr ~repository ~tag ~archive ~attached ~draft =
 
 let make mgr ~observe ~repository ~tag ~commit ~archive ~attached =
   let page = Revocation.release_url ~repository ~tag in
-  let* release = look_up mgr ~repository ~tag in
-  let made ~draft =
+  (* A release already there, draft or published, has its tag, so finding it
+     is part of the tag's step. *)
+  let* release =
+    step observe (Tag { tag; repository }) @@ fun () ->
+    let* release = look_up mgr ~repository ~tag in
     let* () =
-      step observe (Tag { tag; repository }) @@ fun () ->
-      tag_commit mgr ~repository ~tag ~commit
+      match release with
+      | Published -> Ok ()
+      | Draft | Not_released -> tag_commit mgr ~repository ~tag ~commit
     in
+    Ok release
+  in
+  let made ~draft =
     let* () =
       step observe (Release { tag; repository }) @@ fun () ->
       publish_with mgr ~repository ~tag ~archive ~attached ~draft

@@ -81,6 +81,11 @@ let fail t =
 let passed t text = print t (fun ppf -> Fmt.pf ppf "%a %s" tick () text)
 let refused t text = print t (fun ppf -> Fmt.pf ppf "%a %s" cross () text)
 
+(* The end of a run that left the author nothing to do. *)
+let finished t text =
+  print t (fun ppf ->
+      Fmt.pf ppf "\u{1F389} %a %s" Fmt.(styled `Bold string) "Done!" text)
+
 let detail t text =
   print t (fun ppf ->
       Fmt.list ~sep:Fmt.cut

@@ -21,6 +21,7 @@ fork is older than it, as a fork usually is:
 A version that is not revoked has nothing to restore:
 
   $ open-opam revoke --undo --repo o/foo 1.0.0
+  ✓ Release 1.0.0 of o/foo and its opam files
   ✓ Registry open-opam/opam-repository
   ✗ Restore 1.0.0
     o/foo 1.0.0 is not revoked.
@@ -30,7 +31,9 @@ Revoking marks the release's notes, as the author, and opens one pull request
 that only adds a record, from the fork as it is:
 
   $ open-opam revoke --repo o/foo 1.0.0
+  ✓ Release 1.0.0 of o/foo and its opam files
   ✓ Registry open-opam/opam-repository
+  ✓ Notes of 1.0.0 on o/foo say "Revoked on open-opam."
   ✓ Your fork of open-opam/opam-repository
   ✓ Branch revoke/foo-1.0.0 on author/opam-repository
   ✓ Pull request on open-opam/opam-repository
@@ -135,11 +138,13 @@ takes the mark out of the notes, and adds a restoration record:
   $ git -C "$FAKE/registry" fetch -q "$FAKE/fork.git" revoke/foo-1.0.0 && git -C "$FAKE/registry" merge -q --ff-only FETCH_HEAD 2>/dev/null || git -C "$FAKE/registry" merge -q --no-edit FETCH_HEAD
   $ rm "$FAKE/open_pr"
   $ open-opam revoke --repo o/foo 1.0.0
+  ✓ Release 1.0.0 of o/foo and its opam files
   ✓ Registry open-opam/opam-repository
   ✗ Revoke 1.0.0
     o/foo 1.0.0 is already revoked.
   [1]
-  $ open-opam revoke --undo --repo o/foo 1.0.0 | tail -1
+  $ open-opam revoke --undo --repo o/foo 1.0.0 | grep -e Notes -e '→'
+  ✓ Notes of 1.0.0 on o/foo no longer say "Revoked on open-opam."
   → The registry merges it once its checks pass
   $ cat "$FAKE/notes"; echo
   
@@ -182,6 +187,7 @@ registry revoked is its maintainer's to restore:
   $ git -C "$FAKE/registry" fetch -q "$FAKE/fork.git" restore/foo-1.0.0 && git -C "$FAKE/registry" merge -q --no-edit FETCH_HEAD
   $ rm "$FAKE/open_pr"
   $ open-opam revoke --repo o/foo 1.0.0
+  ✓ Release 1.0.0 of o/foo and its opam files
   ✓ Registry open-opam/opam-repository
   ✗ Revoke 1.0.0
     foo.1.0.0 was revoked and restored before. Only the registry's maintainer can revoke it again.
@@ -202,6 +208,7 @@ and CI refuses such a restoration as well:
 A release that does not exist, or a version not published here, is said so:
 
   $ open-opam revoke --repo o/foo 2.0.0
+  ✓ Release 2.0.0 of o/foo and its opam files
   ✓ Registry open-opam/opam-repository
   ✗ Revoke 2.0.0
     o/foo 2.0.0 is not published on open-opam.

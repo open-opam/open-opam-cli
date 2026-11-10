@@ -241,7 +241,7 @@ Then publishing reads that release, and opens its pull request:
   ✓ Branch publish/foo-1.0.0 on author/opam-repository
   ✓ Pull request on open-opam/opam-repository
     https://github.com/open-opam/opam-repository/pull/1
-  → The registry merges it once its checks pass
+  🎉 Done! foo 1.0.0 merges once its checks pass
   $ git -C "$FAKE/fork.git" show --format=%s --name-only publish/foo-1.0.0
   Publish foo 1.0.0
   

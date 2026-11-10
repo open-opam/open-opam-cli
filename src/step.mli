@@ -8,6 +8,12 @@ type t =
       (** the commit tagged, and the tag pushed *)
   | Release of { tag : string; repository : string }
       (** a draft given its archive, then published *)
+  | Release_files of { tag : string; repository : string }
+      (** a release looked up, with the opam files of its tag, by revoke *)
+  | Mark of { tag : string; repository : string }
+      (** a release's notes made to say {!Revocation.mark} *)
+  | Unmark of { tag : string; repository : string }
+      (** a release's notes made to no longer say {!Revocation.mark} *)
   | Registry of string  (** a clone of the registry, [owner/name] *)
   | Fork of string  (** the author's fork of the registry, [owner/name] *)
   | Branch of { fork : string; branch : string }
