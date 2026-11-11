@@ -10,11 +10,11 @@ The CLI to publish and manage your packages on [open-opam](https://open-opam.git
 ## Install
 
 ```sh
-opam repo add open-opam https://github.com/open-opam/opam-repository.git --rank=-1
+opam repo add open-opam https://github.com/open-opam/opam-repository.git
 opam install open-opam
 ```
 
-Needs [`gh`](https://cli.github.com), signed in.
+Requires [GitHub CLI](https://cli.github.com).
 
 ## Commands
 
