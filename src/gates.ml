@@ -220,7 +220,7 @@ let compare_with_change mgr (change : change) generated =
         | Allowed_files.Added { path; kind = File } -> (
             match Layout.of_path path with
             | Some (Opam _ | Owner _) -> Some path
-            | Some (Record _) | None -> None)
+            | Some (Record _ | Block _) | None -> None)
         | Allowed_files.Added _ | Changed _ | Deleted _ -> None)
       changes
   in
@@ -355,6 +355,18 @@ let name_ownership mgr ~registry ~change ~(repo : Github.repository) names =
         each (List.rev_append found problems) rest
   in
   let* problems = each [] names in
+  let path = Layout.path (Block repo.owner.id) in
+  let* block = read_registry mgr ~registry ~change path in
+  let* blocked =
+    match block with
+    | None -> Ok []
+    | Some text ->
+        let* (_ : Records.block) =
+          Records.decode Records.block_json ~path text
+        in
+        Ok [ Name_ownership.Blocked { account = repo.owner.login; registry } ]
+  in
+  let problems = blocked @ problems in
   Ok
     (Report.outcome Name_ownership
        (reported Name_ownership.problem_code Name_ownership.problem_to_string
@@ -718,7 +730,7 @@ let request mgr ~observe ~(change : change) records =
                       (match state with
                         | Revoked Author_request -> []
                         | Revoked
-                            (( Security | Legal | Upstream_gone
+                            (( Security | Legal | Gone | Malicious
                              | Official_conflict ) as reason) ->
                             [
                               Revocation.Revoked_by_the_registry
@@ -774,7 +786,7 @@ let change mgr ~fs ~observe ~registry ~change =
             match Layout.of_path path with
             | Some (Record { record; name; version }) ->
                 Some (record, name, version, path)
-            | Some (Opam _ | Owner _) | None -> None)
+            | Some (Opam _ | Owner _ | Block _) | None -> None)
         | Allowed_files.Added _ | Changed _ | Deleted _ -> None)
       changes
   in
@@ -787,7 +799,7 @@ let change mgr ~fs ~observe ~registry ~change =
         (fun path ->
           match Layout.of_path path with
           | Some (Opam _) -> true
-          | Some (Owner _ | Record _) | None -> false)
+          | Some (Owner _ | Record _ | Block _) | None -> false)
         (List.filter_map
            (function
              | Allowed_files.Added { path; kind = File } -> Some path

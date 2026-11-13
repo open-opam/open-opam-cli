@@ -81,7 +81,8 @@ let reason_to_string : Records.reason -> string = function
   | Security -> "security"
   | Legal -> "legal"
   | Author_request -> "author-request"
-  | Upstream_gone -> "upstream-gone"
+  | Gone -> "gone"
+  | Malicious -> "malicious"
   | Official_conflict -> "official-conflict"
 
 let problem_to_string = function
@@ -137,7 +138,7 @@ let check_revocation ~path ~repository ~tag text =
   | Ok r -> (
       let evidence = release_url ~repository ~tag in
       match r.reason with
-      | Security | Legal | Upstream_gone | Official_conflict ->
+      | Security | Legal | Gone | Malicious | Official_conflict ->
           differs path "an author's revocation has the reason author-request"
       | Author_request ->
           if not (String.equal r.actor repository) then

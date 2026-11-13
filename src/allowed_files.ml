@@ -102,13 +102,15 @@ let check ~existing changes =
   let packages =
     List.filter_map
       (function
-        | Layout.Opam { name; _ } -> Some name | Owner _ | Record _ -> None)
+        | Layout.Opam { name; _ } -> Some name
+        | Owner _ | Record _ | Block _ -> None)
       allowed
   in
   let records =
     List.filter_map
       (function
-        | Layout.Record r -> Some (r.name, r.version) | Opam _ | Owner _ -> None)
+        | Layout.Record r -> Some (r.name, r.version)
+        | Opam _ | Owner _ | Block _ -> None)
       allowed
   in
   let versions =
@@ -116,7 +118,7 @@ let check ~existing changes =
       (List.filter_map
          (function
            | Layout.Opam { version; _ } | Record { version; _ } -> Some version
-           | Owner _ -> None)
+           | Owner _ | Block _ -> None)
          allowed)
   in
   let per_change = function
@@ -130,7 +132,9 @@ let check ~existing changes =
           | None -> []
         in
         match Layout.of_path path with
-        | None -> Outside_the_publication_paths path :: collision
+        (* A block is the maintainer's, judged by the registry's own workflow. *)
+        | None | Some (Block _) ->
+            Outside_the_publication_paths path :: collision
         | Some (Owner name) when not (List.mem name packages) ->
             Owner_without_a_package name :: collision
         | Some (Record { name; version; _ }) ->

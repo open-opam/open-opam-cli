@@ -19,9 +19,17 @@ type release = {
 
 type parent = { full_name : string } [@@deriving wiretype]
 
+type account = {
+  id : int;  (** the identity; it survives a rename *)
+  login : string;
+}
+[@@deriving wiretype]
+(** A user or an organisation. *)
+
 type repository = {
   id : int;
   full_name : string;
+  owner : account;
   created_at : Ptime.t;
   parent : parent option;
       (** the repository this one was forked from, for a fork only *)

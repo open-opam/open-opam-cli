@@ -16,7 +16,8 @@ type reason =
   | Security
   | Legal
   | Author_request
-  | Upstream_gone
+  | Gone  (** its GitHub release no longer exists *)
+  | Malicious  (** malware or spam: its author is blocked too *)
   | Official_conflict
 
 type revocation = {
@@ -35,6 +36,16 @@ type restoration = {
 }
 [@@deriving wiretype]
 (** [restorations/<name>.<version>.json]: its author took a revocation back. *)
+
+type block = {
+  account : string;  (** a display name, the account's login *)
+  actor : string;  (** who blocked it *)
+  evidence : string;  (** a link to what shows why *)
+  blocked_at : Ptime.t;
+}
+[@@deriving wiretype]
+(** [blocked/<account id>.json]: no repository the account owns publishes here,
+    since a package of theirs was revoked as malicious. *)
 
 val decode :
   'a Wiretype.t -> path:string -> string -> ('a, [> `Tool of string ]) result

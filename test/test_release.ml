@@ -7,7 +7,13 @@ let instant =
   match Ptime.of_date (2026, 11, 6) with Some t -> t | None -> Ptime.epoch
 
 let repository : G.repository =
-  { id = 42; full_name = "o/foo"; created_at = instant; parent = None }
+  {
+    id = 42;
+    full_name = "o/foo";
+    owner = { id = 420; login = "o" };
+    created_at = instant;
+    parent = None;
+  }
 
 let release ?(draft = false) ?(immutable = true) ?(digest = Some "sha256:abc")
     () : G.release =

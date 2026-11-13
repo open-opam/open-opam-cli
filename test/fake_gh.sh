@@ -12,7 +12,7 @@ case "$*" in
   "api -H Accept: application/vnd.github.raw+json repos/ocaml/opam-repository/contents/packages/"*)
     exec cat "$FAKE/official/${4#repos/ocaml/opam-repository/contents/packages/}" ;;
   "api repos/real/foo")
-    echo '{"id":7,"full_name":"real/foo","created_at":"2026-01-01T00:00:00Z"}' ;;
+    echo '{"id":7,"full_name":"real/foo","owner":{"id":70,"login":"real"},"created_at":"2026-01-01T00:00:00Z"}' ;;
   "api repos/gone/foo")
     echo "gh: Not Found (HTTP 404)" >&2; exit 1 ;;
   "api repos/o/foo/immutable-releases")
@@ -22,7 +22,7 @@ case "$*" in
   "api repos/o/foo")
     # A fork names its original as its parent.
     if [ -f "$FAKE/fork_of" ]; then parent=$(printf ',"parent":{"full_name":"%s"}' "$(cat "$FAKE/fork_of")"); fi
-    printf '{"id":42,"full_name":"o/foo","created_at":"2026-01-01T00:00:00Z"%s}\n' "$parent" ;;
+    printf '{"id":42,"full_name":"o/foo","owner":{"id":420,"login":"o"},"created_at":"2026-01-01T00:00:00Z"%s}\n' "$parent" ;;
   "api repos/up/foo/contents")
     echo '[{"name":"README.md"},{"name":"foo.opam"},{"name":"foo-cli.opam"}]' ;;
   "api repos/o/foo/releases/tags/"*)

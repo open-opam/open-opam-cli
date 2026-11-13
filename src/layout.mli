@@ -11,6 +11,9 @@ type file =
   | Owner of string  (** [.open-opam/owners/<name>.json] *)
   | Record of { record : record; name : string; version : string }
       (** [.open-opam/revocations/<name>.<version>.json], or [restorations/] *)
+  | Block of int
+      (** [.open-opam/blocked/<account id>.json], the account's numeric GitHub
+          ID *)
 
 val path : file -> string
 
