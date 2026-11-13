@@ -72,6 +72,28 @@ let allowed_files =
       ~existing:[ "packages/foo/foo.1.0.0/opam" ]
       [ "differs_only_by_case" ]
       [ added "packages/foo/foo.1.0.0/opam" ];
+    allowed "a block, which is the maintainer's"
+      [ "outside_the_publication_paths" ]
+      [ added ".open-opam/blocked/42.json"; added (opam "foo" "1.2.3") ];
+  ]
+
+let block_paths =
+  let module L = Open_opam.Layout in
+  let reads path expected =
+    Alcotest.test_case path `Quick (fun () ->
+        Alcotest.(check (option int))
+          path expected
+          (match L.of_path path with
+          | Some (Block account) -> Some account
+          | Some (Opam _ | Owner _ | Record _) | None -> None))
+  in
+  [
+    reads ".open-opam/blocked/42.json" (Some 42);
+    reads ".open-opam/blocked/042.json" None;
+    reads ".open-opam/blocked/0x2a.json" None;
+    reads ".open-opam/blocked/4_2.json" None;
+    reads ".open-opam/blocked/-42.json" None;
+    reads ".open-opam/blocked/o.json" None;
   ]
 
 let diff_reading =
@@ -321,6 +343,7 @@ let () =
     [
       ("name ownership", ownership_tests);
       ("allowed files", allowed_files);
+      ("a block's path", block_paths);
       ("reading a diff", diff_reading);
       ("the standard", standard_tests);
       ("records", record_tests);

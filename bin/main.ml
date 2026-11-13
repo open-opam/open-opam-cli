@@ -752,7 +752,8 @@ let status repository registry =
                         | Author_request -> "by you"
                         | Security -> "security"
                         | Legal -> "legal"
-                        | Upstream_gone -> "release gone"
+                        | Gone -> "release gone"
+                        | Malicious -> "malicious"
                         | Official_conflict -> "official opam holds the name"))
                 versions)
         status.packages;

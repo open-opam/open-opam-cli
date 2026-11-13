@@ -27,7 +27,7 @@ let packages (found : Gates.found) =
   List.filter_map
     (fun (path, bytes) ->
       match Layout.of_path path with
-      | Some (Owner _ | Record _) | None -> None
+      | Some (Owner _ | Record _ | Block _) | None -> None
       | Some (Opam { name; _ }) ->
           let synopsis =
             match Opam_file.of_string bytes with
@@ -364,8 +364,8 @@ let revoke mgr ~fs ~observe ~registry ~repository ~tag ~undo ~now =
                 (fun (name, (state : Revocation.state)) ->
                   match state with
                   | Revoked
-                      ((Security | Legal | Upstream_gone | Official_conflict) as
-                       reason) ->
+                      ((Security | Legal | Gone | Malicious | Official_conflict)
+                       as reason) ->
                       Some
                         (Revocation.Revoked_by_the_registry
                            { package = label name; reason })

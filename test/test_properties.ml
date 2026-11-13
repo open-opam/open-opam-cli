@@ -75,7 +75,7 @@ let record_tests =
   in
   let reason =
     G.oneof_list
-      R.[ Security; Legal; Author_request; Upstream_gone; Official_conflict ]
+      R.[ Security; Legal; Author_request; Gone; Malicious; Official_conflict ]
   in
   let revocation =
     G.map
@@ -89,6 +89,12 @@ let record_tests =
         { actor; evidence; restored_at })
       (G.triple text text instant)
   in
+  let block =
+    G.map
+      (fun (account, actor, evidence, blocked_at) : R.block ->
+        { account; actor; evidence; blocked_at })
+      (G.quad text text text instant)
+  in
   let same_status (a : R.status) (b : R.status) =
     match (a, b) with
     | Active, Active | Disputed, Disputed -> true
@@ -99,11 +105,13 @@ let record_tests =
     | Security, Security
     | Legal, Legal
     | Author_request, Author_request
-    | Upstream_gone, Upstream_gone
+    | Gone, Gone
+    | Malicious, Malicious
     | Official_conflict, Official_conflict ->
         true
-    | (Security | Legal | Author_request | Upstream_gone | Official_conflict), _
-      ->
+    | ( ( Security | Legal | Author_request | Gone | Malicious
+        | Official_conflict ),
+        _ ) ->
         false
   in
   [
@@ -128,6 +136,13 @@ let record_tests =
            String.equal a.actor b.actor
            && String.equal a.evidence b.evidence
            && Ptime.equal a.restored_at b.restored_at));
+    property "a block reads back as written" block
+      (fun (b : R.block) -> b.account)
+      (read_back R.block_json (fun (a : R.block) (b : R.block) ->
+           String.equal a.account b.account
+           && String.equal a.actor b.actor
+           && String.equal a.evidence b.evidence
+           && Ptime.equal a.blocked_at b.blocked_at));
   ]
 
 (* A release as GitHub names one: an owner and a name, a tag that can name a
@@ -185,6 +200,7 @@ let layout_tests =
                 version;
               })
           G.bool name version;
+        G.map (fun account -> L.Block account) G.nat;
       ]
   in
   [

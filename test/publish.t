@@ -172,6 +172,20 @@ the release from the opam files it adds:
   ✓ Metadata and standard
   ✓ Author's CI
 
+An account the registry blocked, for a package revoked as malicious, publishes
+nothing more, from any of its repositories:
+
+  $ git -C ci switch -q -c blocked main
+  $ mkdir -p ci/.open-opam/blocked
+  $ cat > ci/.open-opam/blocked/420.json <<'EOF'
+  > {"account":"o","actor":"maintainer","evidence":"https://example.com/advisory","blocked_at":"2026-11-13T00:00:00Z"}
+  > EOF
+  $ git -C ci add . && git -C ci commit -qm block
+  $ open-opam check --checkout ci --base blocked --head publish | grep -A1 'Name ownership'
+  ✗ Name ownership
+    o is blocked here, since a package of theirs was revoked as malicious. If that is a mistake, open an issue on open-opam/opam-repository. [blocked]
+  $ git -C ci switch -q main
+
 A change adding a file with no release behind it stops at that:
 
   $ git -C ci switch -q -c no-release main

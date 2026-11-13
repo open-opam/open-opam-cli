@@ -12,7 +12,8 @@ type reason =
   | Security
   | Legal
   | Author_request [@name "author-request"]
-  | Upstream_gone [@name "upstream-gone"]
+  | Gone
+  | Malicious
   | Official_conflict [@name "official-conflict"]
 [@@deriving wiretype]
 
@@ -25,6 +26,14 @@ type revocation = {
 [@@deriving wiretype]
 
 type restoration = { actor : string; evidence : string; restored_at : Ptime.t }
+[@@deriving wiretype]
+
+type block = {
+  account : string;
+  actor : string;
+  evidence : string;
+  blocked_at : Ptime.t;
+}
 [@@deriving wiretype]
 
 let decode description ~path text =

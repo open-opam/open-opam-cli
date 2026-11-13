@@ -15,6 +15,7 @@ type problem =
       original : string;
       instead : string;
     }
+  | Blocked of { account : string; registry : string }
 
 let problem_code = function
   | Official_elsewhere _ -> "official_elsewhere"
@@ -22,6 +23,7 @@ let problem_code = function
   | Owned_by_another _ -> "owned_by_another"
   | Disputed _ -> "disputed"
   | Fork_of_the_original _ -> "fork_of_the_original"
+  | Blocked _ -> "blocked"
 
 let problem_to_string = function
   | Official_elsewhere { name; repository } ->
@@ -41,6 +43,11 @@ let problem_to_string = function
         "%s: this repository is a fork of %s, which publishes %s. A fork \
          publishes under its own name, such as %s."
         name original name instead
+  | Blocked { account; registry } ->
+      Printf.sprintf
+        "%s is blocked here, since a package of theirs was revoked as \
+         malicious. If that is a mistake, open an issue on %s."
+        account registry
 
 (* The fork's owner names it apart, as official opam's forks do. *)
 let own_name ~repository ~name =

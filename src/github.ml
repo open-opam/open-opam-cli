@@ -16,11 +16,13 @@ type release = {
 [@@deriving wiretype]
 
 type parent = { full_name : string } [@@deriving wiretype]
+type account = { id : int; login : string } [@@deriving wiretype]
 
 (* GitHub sends a parent only for a fork. *)
 type repository = {
   id : int;
   full_name : string;
+  owner : account;
   created_at : Ptime.t;
   parent : parent option; [@default None]
 }

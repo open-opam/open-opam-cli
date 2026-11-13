@@ -4,6 +4,7 @@ type file =
   | Opam of { name : string; version : string }
   | Owner of string
   | Record of { record : record; name : string; version : string }
+  | Block of int
 
 let directory = function
   | Revocation -> "revocations"
@@ -15,6 +16,7 @@ let path = function
   | Owner name -> Printf.sprintf ".open-opam/owners/%s.json" name
   | Record { record; name; version } ->
       Printf.sprintf ".open-opam/%s/%s.%s.json" (directory record) name version
+  | Block account -> Printf.sprintf ".open-opam/blocked/%d.json" account
 
 (* The characters opam allows in a package name, and in a version. *)
 let name_character = function
@@ -58,4 +60,14 @@ let of_path path =
       | Some _ | None -> None)
   | [ ".open-opam"; "revocations"; file ] -> record_of Revocation file
   | [ ".open-opam"; "restorations"; file ] -> record_of Restoration file
+  | [ ".open-opam"; "blocked"; file ] -> (
+      match json_stem file with
+      | None -> None
+      | Some stem -> (
+          (* One spelling per account: int_of_string also reads 0x2a and 4_2. *)
+          match int_of_string_opt stem with
+          | Some account
+            when account >= 0 && String.equal (string_of_int account) stem ->
+              Some (Block account)
+          | Some _ | None -> None))
   | _ -> None

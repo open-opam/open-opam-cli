@@ -27,6 +27,9 @@ type problem =
       original : string;
       instead : string;
     }
+  | Blocked of { account : string; registry : string }
+      (** the repository's owner, whom the registry blocked for a package
+          revoked as malicious *)
 
 val problem_code : problem -> string
 val problem_to_string : problem -> string
