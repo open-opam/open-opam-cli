@@ -5,7 +5,7 @@
 [![license](https://img.shields.io/github/license/open-opam/open-opam-cli)](LICENSE)
 ![OCaml 5.5+](https://img.shields.io/badge/OCaml-5.5%2B-EC6813?logo=ocaml&logoColor=white)
 
-The CLI to publish and manage your packages on [open-opam](https://open-opam.github.io/opam-repository/).
+The CLI to publish and manage your packages on [open-opam](https://open-opam.org/).
 
 ## Install
 
