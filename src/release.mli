@@ -68,6 +68,7 @@ type definition_problem =
   | Own_commit_hash of string
   | Not_generated of { path : string; line : int }
   | Missing_from_the_change of string
+  | Not_from_the_release of string
 
 val definition_problem_code : definition_problem -> string
 val definition_problem_to_string : definition_problem -> string
@@ -98,9 +99,12 @@ val release_of_opam_file : string -> (string * string) option
 
 val compare_generated :
   expected:(string * string) list ->
+  added:string list ->
   actual:(string -> string option) ->
   definition_problem list
-(** Every generated file against what a change holds, byte for byte. *)
+(** Every generated file against what a change holds, byte for byte, and every
+    opam file or owners record the change [added] against what the release
+    generates: a release publishes nothing it does not generate. *)
 
 (** {1 Gate 7: the author's CI} *)
 

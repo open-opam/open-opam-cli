@@ -129,7 +129,9 @@ let read_archive mgr archive =
         let path = relative entry in
         let* contents =
           if Standard.reads path then
-            answer mgr [ "tar"; "-xOf"; archive; entry ]
+            (* A member's name is the author's: after --, tar takes it as a
+               name, never as an option such as --to-command. *)
+            answer mgr [ "tar"; "-xOf"; archive; "--"; entry ]
           else Ok ""
         in
         read ((path, contents) :: source) rest

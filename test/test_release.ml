@@ -204,16 +204,19 @@ let generation_tests =
             | Error _ -> Alcotest.fail "did not read back"
             | Ok owner ->
                 Alcotest.(check int) "id" 42 owner.github_repository_id));
-    Alcotest.test_case "compare: same, differing, missing" `Quick (fun () ->
+    Alcotest.test_case "compare: same, differing, missing, extra" `Quick
+      (fun () ->
         let actual = function
           | "same" -> Some "a\nb\n"
           | "other" -> Some "a\nX\n"
+          | "extra" -> Some "a\nb\n"
           | _ -> None
         in
         Alcotest.check strings "problems"
           [
             "other: differs from what the release generates, first at line 2.";
             "gone: the release generates it, and the change lacks it.";
+            "extra: the release does not generate it.";
           ]
           (List.map R.definition_problem_to_string
              (R.compare_generated
@@ -221,7 +224,15 @@ let generation_tests =
                   [
                     ("same", "a\nb\n"); ("other", "a\nb\n"); ("gone", "a\nb\n");
                   ]
+                ~added:[ "same"; "other"; "extra" ]
                 ~actual)));
+    Alcotest.test_case "compare: nothing generated, something added" `Quick
+      (fun () ->
+        Alcotest.check strings "problems"
+          [ "extra: the release does not generate it." ]
+          (List.map R.definition_problem_to_string
+             (R.compare_generated ~expected:[] ~added:[ "extra" ]
+                ~actual:(fun _ -> None))));
   ]
 
 (* Built from GitHub's JSON, so the words are read as they are in a run. *)

@@ -51,6 +51,13 @@ An opam file lint refuses is refused here too, naming the file:
   $ open-opam check --archive lint.tar.gz | grep -c 'bar.opam: opam lint failed'
   1
 
+A file named like an option is read as a file, never taken as one by tar:
+
+  $ mkdir dash && printf 'opam-version: "2.0"\n' > dash/--x.opam
+  $ tar -czf dash.tar.gz -C dash -- --x.opam
+  $ open-opam check --archive dash.tar.gz | grep -c -e '--x.opam: opam lint failed'
+  1
+
 A publication in a registry's history passes the allowed-files gate, and the
 rest are judged as CI judges them:
 

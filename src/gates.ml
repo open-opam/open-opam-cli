@@ -211,8 +211,21 @@ let compare_with_change mgr (change : change) generated =
         read ((path, bytes) :: pairs) rest
   in
   let* actual = read [] expected in
+  let* changes =
+    Tools.diff mgr ~registry:change.registry ~base:change.base ~head:change.head
+  in
+  let added =
+    List.filter_map
+      (function
+        | Allowed_files.Added { path; kind = File } -> (
+            match Layout.of_path path with
+            | Some (Opam _ | Owner _) -> Some path
+            | Some (Record _) | None -> None)
+        | Allowed_files.Added _ | Changed _ | Deleted _ -> None)
+      changes
+  in
   Ok
-    (Release.compare_generated ~expected ~actual:(fun path ->
+    (Release.compare_generated ~expected ~added ~actual:(fun path ->
          Option.join (List.assoc_opt path actual)))
 
 (* What the registry holds now: a change is judged against its base, and an
