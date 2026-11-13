@@ -198,6 +198,7 @@ type definition_problem =
   | Own_commit_hash of string
   | Not_generated of { path : string; line : int }
   | Missing_from_the_change of string
+  | Not_from_the_release of string
 
 let definition_problem_code = function
   | Unreadable _ -> "unreadable_opam_file"
@@ -208,6 +209,7 @@ let definition_problem_code = function
   | Own_commit_hash _ -> "own_commit_hash"
   | Not_generated _ -> "not_generated"
   | Missing_from_the_change _ -> "missing_from_the_change"
+  | Not_from_the_release _ -> "not_from_the_release"
 
 let definition_problem_to_string = function
   | Unreadable { file; reason } ->
@@ -234,6 +236,8 @@ let definition_problem_to_string = function
   | Missing_from_the_change path ->
       Printf.sprintf "%s: the release generates it, and the change lacks it."
         path
+  | Not_from_the_release path ->
+      Printf.sprintf "%s: the release does not generate it." path
 
 let same_repository a b =
   String.equal (String.lowercase_ascii a) (String.lowercase_ascii b)
@@ -299,7 +303,7 @@ let first_different_line a b =
   in
   walk 1 (String.split_on_char '\n' a, String.split_on_char '\n' b)
 
-let compare_generated ~expected ~actual =
+let compare_generated ~expected ~added ~actual =
   List.filter_map
     (fun (path, bytes) ->
       match actual path with
@@ -308,6 +312,11 @@ let compare_generated ~expected ~actual =
       | Some found ->
           Some (Not_generated { path; line = first_different_line bytes found }))
     expected
+  @ List.filter_map
+      (fun path ->
+        if List.mem_assoc path expected then None
+        else Some (Not_from_the_release path))
+      added
 
 type ci_problem =
   | No_checks
